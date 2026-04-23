@@ -8,15 +8,22 @@ print(x_train_flat.shape)
 x_train_flat = x_train_flat/255.0
 selected_images = []                            # store selected image data
 selected_labels = []                            # store corresponding labels
+
 for class_label in range(10):
     indices = np.where(y_train == class_label)[0]
-    indices = indices[:500]                     # first 500 
+    indices = indices[:500]                       # first 500 
     selected_images.append(x_train_flat[indices]) # select corresponding images
     selected_labels.append(y_train[indices])      # select corresponding labels
 x_data = np.concatenate(selected_images, axis=0)  # combine class wise image arrays
 y_data = np.concatenate(selected_labels, axis=0)  # combine class wise label arrays
 print(x_data.shape)                               # shape of final image dataset
 print(y_data.shape)                               # shape of final label
+
+# shuffle so all classes are mixed
+indices = np.random.permutation(len(x_data))
+x_data = x_data[indices]
+y_data = y_data[indices]
+
 x_train_final = x_data[:4000]
 y_train_final = y_data[:4000]
 
