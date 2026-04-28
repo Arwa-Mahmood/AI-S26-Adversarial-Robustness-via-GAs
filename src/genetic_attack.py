@@ -122,12 +122,15 @@ class GeneticAttack:
                 else: 
                     c1, c2 = p1.copy(), p2.copy()       #skip crossover, keep parents 
                 
-                next_pop.append(self._mutate(c1))
-                next_pop.append(self._mutate(c2))
+                next_pop.append([self._mutate(c1), self._mutate(c2)])
+        
+            if self.pop_size % 2 == 1: 
+                next_pop.append (self._mutate(population[-1]))
 
-            #keep population size exact (odd pop_size edge cases)
-            next_pop = next_pop[:self.pop_size]         #trim in case pop_size is off 
-            population = np.array(next_pop)
+            population = np.array(next_pop[:self.pop_size])
+            # #keep population size exact (odd pop_size edge cases)
+            # next_pop = next_pop[:self.pop_size]         #trim in case pop_size is off 
+            # population = np.array(next_pop)
 
         # all generations exhasuted -- return best we found 
         fitness = self._fitness(population, x, true_label, predict_proba_fn)
