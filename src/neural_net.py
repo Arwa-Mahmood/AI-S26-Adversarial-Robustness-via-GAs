@@ -3,6 +3,10 @@ from keras.models import Sequential
 from keras.layers import Dense, Input
 from keras.utils import to_categorical
 
+def nn_predict_proba(adv_batch):
+    # return nn_model.predict(image.reshape(1, -1), verbose=0)
+    return nn_model.predict(adv_batch, verbose=0)
+
 # load the saved npy files, first 4800 for train, rest for test
 x_train = np.load('x_train_final_data.npy')
 x_test = np.load('x_test_final_data.npy')
@@ -19,7 +23,7 @@ y_test_cat = to_categorical(y_test, 10)
 
 model = Sequential([
     Input(shape=(784,)),
-    Dense(256, activation='relu'),          # hidden layer 1 - 256 neurons
+    Dense(256, activation='relu'),                              # hidden layer 1 - 256 neurons
     Dense(128, activation='relu'),                              # hidden layer 2 - 128 neurons
     Dense(10, activation='softmax')                             # output - 1 digit
 ])
