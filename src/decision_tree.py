@@ -3,6 +3,7 @@
 import numpy as np
 import pickle   #SAVE AND LOAD TRAINED MODEL TO/FROM DISK
 
+
 #DECISION TREE FROM SCRATCH 
 
 # def entropy(y): # y = array of class labels (digits 0 - 9)
@@ -173,19 +174,36 @@ class DecisionTree:
 
 #TREE -- testing
 
+# if __name__ == "__main__":
+#     import os
+#     os.makedirs("models", exist_ok=True)
+
+#     from mnist import load_mnist
+#     X_train, y_train, X_test, y_test = load_mnist()
+
+#     dt = DecisionTree(max_depth=20, min_samples_split=10, n_features=28)
+#     dt.fit(X_train[:5000], y_train[:5000])
+
+#     preds = dt.predict(X_test[:500])
+#     print(f"Accuracy: {np.mean(preds == y_test[:500]):.4f}")
+
+#     probas = dt.predict_proba(X_test[:5])
+#     print(f"Proba shape: {probas.shape}")       # (5, 10)
+#     print(f"Proba sums:  {probas.sum(axis=1)}") # all 1.0
 if __name__ == "__main__":
     import os
     os.makedirs("models", exist_ok=True)
 
-    from data_loader import load_mnist
-    X_train, y_train, X_test, y_test = load_mnist()
+    X_train = np.load('x_train_final_data.npy')
+    X_test  = np.load('x_test_final_data.npy')
+    y_train = np.load('y_train_final_data.npy')
+    y_test  = np.load('y_test_final_data.npy')
 
     dt = DecisionTree(max_depth=20, min_samples_split=10, n_features=28)
-    dt.fit(X_train[:5000], y_train[:5000])
+    dt.fit(X_train, y_train)
 
-    preds = dt.predict(X_test[:500])
-    print(f"Accuracy: {np.mean(preds == y_test[:500]):.4f}")
+    preds = dt.predict(X_test)
+    print(f"DT Accuracy: {np.mean(preds == y_test):.4f}")
 
-    probas = dt.predict_proba(X_test[:5])
-    print(f"Proba shape: {probas.shape}")       # (5, 10)
-    print(f"Proba sums:  {probas.sum(axis=1)}") # all 1.0
+    dt.save('models/decision_tree.pkl')
+    print("Decision tree saved.")
