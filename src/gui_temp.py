@@ -497,10 +497,14 @@ def attack(predict_fn, image, label, epsilon):
 
 # def apply_smoothing(image, sigma):
 #     return image
-from defense import apply_gaussian_smoothing
+from defense import EnhancedDefense
 
+# def apply_smoothing(image, sigma):
+#     return EnhancedDefense(image, size=3, sigma=sigma)
 def apply_smoothing(image, sigma):
-    return apply_gaussian_smoothing(image, size=3, sigma=sigma)
+    """Apply enhanced defense to a single image"""
+    defense = EnhancedDefense()
+    return defense.defend(image, method='ensemble', sigma=sigma)
 
 # --- State ---
 current = {
@@ -797,8 +801,8 @@ tk.Scale(sidebar, from_=0.1, to=0.5, resolution=0.05,
          font=("Courier",7)).pack(padx=12)
 
 section_label(sidebar, "SIGMA  (defense strength)")
-sigma_var = tk.DoubleVar(value=1.0)
-tk.Scale(sidebar, from_=0.5, to=2.0, resolution=0.5,
+sigma_var = tk.DoubleVar(value=2.0)
+tk.Scale(sidebar, from_=0.5, to=3.0, resolution=0.5,
          orient=tk.HORIZONTAL, variable=sigma_var,
          bg=PANEL_BG, fg=TEXT_PRI, troughcolor=BORDER,
          highlightthickness=0, length=145,
