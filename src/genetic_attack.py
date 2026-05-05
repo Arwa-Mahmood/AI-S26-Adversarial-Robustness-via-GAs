@@ -2,8 +2,8 @@ import numpy as np
 import os
 
 class GeneticAttack: 
-    def __init__ (self, epsilon = 0.2 , pop_size = 50, n_generations = 100, 
-                  mutation_rate = 0.1, crossover_rate = 0.7, early_stop = True):
+    def __init__ (self, epsilon = 0.3 , pop_size = 100, n_generations = 200, 
+                  mutation_rate = 0.15, crossover_rate = 0.7, early_stop = True):
         self.epsilon = epsilon                      #max noise allowed   
         self.pop_size = pop_size                    #no. of candidate solutions per generation     
         self.n_generations = n_generations          #how long evaluations runs
@@ -29,7 +29,13 @@ class GeneticAttack:
         probas = predict_proba_fn(adv_batch)            #pop_size, 10 -- MODEL CONFIDENCE FOR EACH CLASS
         #fitness = how much confidence lost on the true class 
         #higher = better for attacker 
-        return 1.0 - probas[:, true_label]
+        # return 1.0 - probas[:, true_label]
+    
+        true_class_confidence = probas[:, true_label]
+        max_other_confidence = np.max(probas[:, [i for i in range(10) if i != true_label]], axis=1)
+        fitness = (1.0 - true_class_confidence) + (max_other_confidence * 0.5)
+        return fitness
+        # Now encourages BOTH: low confidence on true label AND high confidence on wrong label
 
     #------------------------------------------------------------------------------------------------------
     #TOURNAMENT --SELECTION
@@ -122,8 +128,8 @@ class GeneticAttack:
                 else: 
                     c1, c2 = p1.copy(), p2.copy()       #skip crossover, keep parents 
                 
-                next_pop.append([self._mutate(c1)])
-                next_pop.append([self._mutate(c2)])
+                next_pop.append(self._mutate(c1))
+                next_pop.append(self._mutate(c2))
         
             # if self.pop_size % 2 == 1: 
             #     next_pop.append (self._mutate(population[-1]))
