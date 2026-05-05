@@ -122,10 +122,15 @@ class GeneticAttack:
                 else: 
                     c1, c2 = p1.copy(), p2.copy()       #skip crossover, keep parents 
                 
-                next_pop.append([self._mutate(c1), self._mutate(c2)])
+                next_pop.append([self._mutate(c1)])
+                next_pop.append([self._mutate(c2)])
         
-            if self.pop_size % 2 == 1: 
-                next_pop.append (self._mutate(population[-1]))
+            # if self.pop_size % 2 == 1: 
+            #     next_pop.append (self._mutate(population[-1]))
+
+            if len(next_pop) < self.pop_size:
+                next_pop.append(self._mutate(population[-1]))
+
 
             population = np.array(next_pop[:self.pop_size])
             # #keep population size exact (odd pop_size edge cases)
