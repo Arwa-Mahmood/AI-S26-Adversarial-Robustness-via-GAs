@@ -17,6 +17,19 @@ Usage:
 import os, argparse
 import numpy as np
 import pickle
+import sys
+
+# Add Node class definition BEFORE loading pickle
+class Node:
+    """Node class for Decision Tree - required for unpickling"""
+    def __init__(self, feature=None, threshold=None, left=None, right=None, value=None):
+        self.feature = feature
+        self.threshold = threshold
+        self.left = left
+        self.right = right
+        self.value = value
+
+# Now import DecisionTree (which should also have Node defined)
 from decision_tree import DecisionTree
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -26,16 +39,16 @@ os.makedirs("results", exist_ok=True)
 # CLI ARGS
 # ─────────────────────────────────────────
 parser = argparse.ArgumentParser()
-parser.add_argument("--eps",    type=float, default=0.2,
+parser.add_argument("--eps",    type=float, default=0.3,  # Increased default
                     help="GA epsilon (perturbation budget)")
 parser.add_argument("--n",      type=int,   default=100,
                     help="Number of test samples to attack")
-parser.add_argument("--pop",    type=int,   default=50,
+parser.add_argument("--pop",    type=int,   default=100,  # Increased default
                     help="GA population size")
-parser.add_argument("--gens",   type=int,   default=100,
+parser.add_argument("--gens",   type=int,   default=150,  # Increased default
                     help="GA generations")
 parser.add_argument("--sigmas", type=float, nargs="+",
-                    default=[0.5, 1.0, 1.5, 2.0],
+                    default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  # Added more sigmas
                     help="Sigma values for Gaussian defense sweep")
 args = parser.parse_args()
 
@@ -57,7 +70,10 @@ y_eval = y_test[:N]
 # ─────────────────────────────────────────
 print("[eval] Loading models...")
 
-# Decision Tree
+# Decision Tree - add Node class to globals for pickle
+import decision_tree
+sys.modules['__main__'].Node = Node  # This helps pickle find Node class
+
 with open("models/decision_tree.pkl", "rb") as f:
     dt_model = pickle.load(f)
 
@@ -104,6 +120,8 @@ def run_ga_attack(X, y, predict_fn, predict_proba_fn, label=""):
         epsilon=args.eps,
         pop_size=args.pop,
         n_generations=args.gens,
+        mutation_rate=0.15,
+        crossover_rate=0.8,
         early_stop=True,
     )
     adv_examples  = np.zeros_like(X)
