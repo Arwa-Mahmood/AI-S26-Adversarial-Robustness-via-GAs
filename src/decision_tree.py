@@ -205,5 +205,10 @@ if __name__ == "__main__":
     preds = dt.predict(X_test)
     print(f"DT Accuracy: {np.mean(preds == y_test):.4f}")
 
+    # dt.save('models/decision_tree.pkl')
+    # print("Decision tree saved.")
+
     dt.save('models/decision_tree.pkl')
     print("Decision tree saved.")
+
+    # made changes for eshaal
