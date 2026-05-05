@@ -447,9 +447,14 @@ import numpy as np
 import pickle
 import time
 from keras.models import load_model
-nn_model = load_model('nn_model.keras')
+
+
+#AUTO SETUP 
+import setup    #setup.py handles mnist.py + DT + NN training
 
 # --- Load data ---
+nn_model = load_model('nn_model.keras')
+
 X_test = np.load('x_test_final_data.npy')
 y_test = np.load('y_test_final_data.npy')
 
@@ -646,10 +651,18 @@ def update_card(img_label, dt_bar_frame, nn_bar_frame,
     make_confidence_bars(nn_bar_frame, nn_probs)
     dt_col = ACCENT_GRN if dt_pred == true_label_val else ACCENT_RED
     nn_col = ACCENT_GRN if nn_pred == true_label_val else ACCENT_RED
+    # pred_label.config(
+    #     text=f"DT → {dt_pred}   NN → {nn_pred}",
+    #     fg=ACCENT_GRN if dt_pred == true_label_val and nn_pred == true_label_val else ACCENT_RED
+    # )
+    dt_conf = int(dt_probs[dt_pred] * 100)
+    nn_conf = int(nn_probs[nn_pred] * 100)
+    dt_col = ACCENT_GRN if dt_pred == true_label_val else ACCENT_RED
+    nn_col = ACCENT_GRN if nn_pred == true_label_val else ACCENT_RED
     pred_label.config(
-        text=f"DT → {dt_pred}   NN → {nn_pred}",
-        fg=ACCENT_GRN if dt_pred == true_label_val and nn_pred == true_label_val else ACCENT_RED
-    )
+    text=f"DT predicts: {dt_pred}  ({dt_conf}%)\nNN predicts: {nn_pred}  ({nn_conf}%)",
+    fg=dt_col
+)
 
 # ─────────────────────────────────────────
 # BUTTON ACTIONS
@@ -673,7 +686,7 @@ def load_image():
         l.config(text="—", fg=TEXT_SEC)
 
     true_lbl.config(text=f"TRUE LABEL:  {current['label']}")
-    status_lbl.config(text="▶  Image loaded. Ready to attack.", fg=ACCENT_BLUE)
+    status_lbl.config(text="▶️  Image loaded. Ready to attack.", fg=ACCENT_BLUE)
     animate_network(current["image"])
 
 def run_attack():
@@ -846,7 +859,7 @@ def make_card(parent, title, accent):
 
     # prediction line
     pred_lbl = tk.Label(card, text="—", bg=CARD_BG, fg=TEXT_SEC,
-                        font=("Courier",9,"bold"))
+                        font=("Courier",11,"bold"))
     pred_lbl.pack(pady=2)
 
     # confidence bars
@@ -876,7 +889,7 @@ status_bar.pack(fill=tk.X)
 status_bar.pack_propagate(False)
 
 status_lbl = tk.Label(status_bar,
-                      text="▶  Run data_extraction.py first, then launch this.",
+                      text="▶️  Run data_extraction.py first, then launch this.",
                       bg=PANEL_BG, fg=TEXT_SEC, font=("Courier",8), anchor="w")
 status_lbl.pack(side=tk.LEFT, padx=16, pady=6)
 
