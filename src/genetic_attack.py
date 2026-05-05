@@ -241,5 +241,4 @@ if __name__ == "__main__":
 
     # small sweep to verify pipeline
     results = epsilon_sweep(X_test, y_test, dt.predict, dt.predict_proba,
-                            epsilons=[0.1, 0.3], n_samples=20)    
-        
+                            epsilons=[0.1, 0.3], n_samples=20)
