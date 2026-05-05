@@ -33,6 +33,7 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 # categorical_crossentropy measures how wrong of a guess was
 # accuracy prinitng
 
+# model.fit(x_train, y_train_cat, epochs=10, batch_size=32)
 model.fit(x_train, y_train_cat, epochs=10, batch_size=32)
 # epochs=10, it will go through data 10 times 
 # batch_size=32 looks at 32 at one time
