@@ -148,6 +148,12 @@ class GeneticAttack:
         best_idx = np.argmax(fitness)
         adv = np.clip(x + population[best_idx],0 ,1)
 
+        for _ in range(5000):
+            noise = np.random.uniform(-self.epsilon, self.epsilon, x.shape)
+            candidate = np.clip(x + noise, 0, 1)
+            if predict_fn(candidate.reshape(1, -1))[0] != true_label:
+                return candidate, True, -2
+            
         return adv, False, -1
 
         #Early Exit + Evolve 
@@ -239,7 +245,7 @@ if __name__ == "__main__":
     y_train = np.load('y_train_final_data.npy')
     y_test  = np.load('y_test_final_data.npy')
     
-    dt = DecisionTree.load ('models/decision_tree.pk1')     #load pretrained 
+    dt = DecisionTree.load ('models/decision_tree.pkl')     #load pretrained 
 
     #test single attack 
     ga = GeneticAttack (epsilon = 0.3, pop_size = 50, n_generations = 100)
