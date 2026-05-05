@@ -11,7 +11,7 @@ selected_labels = []                            # store corresponding labels
 
 for class_label in range(10):
     indices = np.where(y_train == class_label)[0]
-    indices = indices[:500]                       # first 500 
+    indices = indices[:1000]                       # first 500 
     selected_images.append(x_train_flat[indices]) # select corresponding images
     selected_labels.append(y_train[indices])      # select corresponding labels
 x_data = np.concatenate(selected_images, axis=0)  # combine class wise image arrays
