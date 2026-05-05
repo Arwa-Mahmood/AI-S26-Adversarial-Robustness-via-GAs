@@ -20,6 +20,7 @@ def apply_gaussian_smoothing(x, size=3, sigma=1.0):
     return output.flatten()
 
 def defend(X, size=3, sigma=1.0):
+    # return np.array([apply_gaussian_smoothing(x, size, sigma) for x in X])
     return np.array([apply_gaussian_smoothing(x, size, sigma) for x in X])
 
 def evaluate_defense(X_adv, y_true, predict_fn, sigmas=[0.5, 1.0, 1.5, 2.0]):
