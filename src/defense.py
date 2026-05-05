@@ -1,59 +1,46 @@
-# enhanced_defense.py
+# defense.py - CORRECTED VERSION
 import numpy as np
-from scipy.ndimage import median_filter, gaussian_filter
-from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import IsolationForest
 
 class EnhancedDefense:
     def __init__(self):
-        self.defense_methods = {
-            'gaussian': self._gaussian_defense,
-            'median': self._median_defense,
-            'ensemble': self._ensemble_defense,
-            'adaptive': self._adaptive_defense
-        }
-    
-    def _gaussian_defense(self, image, sigma=1.0):
+        self.detector = None  # Train on clean vs adversarial
+        
+    def _median_filter_defense(self, image, kernel_size=3):
+        """Spatial filtering to remove outliers while preserving edges"""
+        from scipy.ndimage import median_filter
         img_2d = image.reshape(28, 28)
-        return gaussian_filter(img_2d, sigma=sigma).flatten()
+        # Small kernel only - preserves details
+        filtered = median_filter(img_2d, size=kernel_size)
+        return filtered.flatten()
     
-    def _median_defense(self, image, size=3):
-        img_2d = image.reshape(28, 28)
-        return median_filter(img_2d, size=size).flatten()
+    def _feature_squeeze_defense(self, image, bit_depth=4):
+        """Remove small perturbations by reducing precision"""
+        squeezed = np.floor(image * (2**bit_depth)) / (2**bit_depth)
+        return squeezed
     
-    def _ensemble_defense(self, image, sigma=1.0):
-        """Voting ensemble of multiple methods"""
-        img_2d = image.reshape(28, 28)
-        
-        # Multiple defenses
-        gaussian = gaussian_filter(img_2d, sigma=sigma)
-        median = median_filter(img_2d, size=3)
-        
-        # Weighted average (give more weight to median for outlier removal)
-        result = (gaussian * 0.4 + median * 0.6)
-        return result.flatten()
+    def _bit_depth_reduction(self, image, bits=3):
+        """Extreme version - only 8 possible intensity levels"""
+        levels = 2**bits
+        quantized = np.floor(image * levels) / levels
+        return quantized
     
-    def _adaptive_defense(self, image, base_sigma=1.0):
-        """Adapt sigma based on local noise"""
-        img_2d = image.reshape(28, 28)
-        
-        # Estimate noise per region
-        smooth = gaussian_filter(img_2d, sigma=0.5)
-        noise = np.abs(img_2d - smooth)
-        
-        # Higher sigma in noisy regions
-        adaptive_sigma = base_sigma + (noise * 2)
-        adaptive_sigma = np.clip(adaptive_sigma, 0.5, 3.0)
-        
-        # Apply adaptive smoothing
-        from scipy.ndimage import gaussian_filter
-        result = gaussian_filter(img_2d, sigma=adaptive_sigma)
-        return result.flatten()
-    
-    def defend(self, X, method='ensemble', **kwargs):
+    def defend(self, X, method='feature_squeeze', **kwargs):
         """Main defense interface"""
-        defense_fn = self.defense_methods.get(method, self._ensemble_defense)
+        if method == 'median':
+            kernel = kwargs.get('kernel_size', 3)
+            if len(X.shape) == 1:
+                return self._median_filter_defense(X, kernel)
+            return np.array([self._median_filter_defense(x, kernel) for x in X])
         
-        if len(X.shape) == 1:
-            return defense_fn(X, **kwargs)
-        else:
-            return np.array([defense_fn(x, **kwargs) for x in X])
+        elif method == 'feature_squeeze':
+            bits = kwargs.get('bit_depth', 4)
+            if len(X.shape) == 1:
+                return self._feature_squeeze_defense(X, bits)
+            return np.array([self._feature_squeeze_defense(x, bits) for x in X])
+        
+        elif method == 'bit_depth':
+            bits = kwargs.get('bits', 3)
+            if len(X.shape) == 1:
+                return self._bit_depth_reduction(X, bits)
+            return np.array([self._bit_depth_reduction(x, bits) for x in X])
