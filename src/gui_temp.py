@@ -490,8 +490,9 @@ def predict_proba_fn(adv_batch):
     return nn_model.predict(adv_batch, verbose=0)
 
 def attack(predict_fn, image, label, epsilon):
-    ga = GeneticAttack(epsilon=epsilon, pop_size=50, n_generations=100)
+    ga = GeneticAttack(epsilon=epsilon, pop_size=100, n_generations=200)
     adv, success, gen = ga.attack(image, label, predict_fn, predict_proba_fn)
+    print(f"Attack - Success: {success}, Generation: {gen}")
     return adv
 
 # def apply_smoothing(image, sigma):
@@ -788,8 +789,8 @@ tk.Label(sidebar, text="CONTROLS", bg=PANEL_BG, fg=TEXT_PRI,
 tk.Frame(sidebar, bg=BORDER, height=1).pack(fill=tk.X, padx=12)
 
 section_label(sidebar, "EPSILON  (attack strength)")
-epsilon_var = tk.DoubleVar(value=0.1)
-tk.Scale(sidebar, from_=0.05, to=0.25, resolution=0.05,
+epsilon_var = tk.DoubleVar(value=0.3)
+tk.Scale(sidebar, from_=0.1, to=0.5, resolution=0.05,
          orient=tk.HORIZONTAL, variable=epsilon_var,
          bg=PANEL_BG, fg=TEXT_PRI, troughcolor=BORDER,
          highlightthickness=0, length=145,
