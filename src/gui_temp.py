@@ -453,7 +453,7 @@ from keras.models import load_model
 import setup    #setup.py handles mnist.py + DT + NN training
 
 # --- Load data ---
-nn_model = load_model('nn_model.keras')
+nn_model = load_model('models/nn_model.keras')
 
 X_test = np.load('x_test_final_data.npy')
 y_test = np.load('y_test_final_data.npy')
@@ -501,10 +501,10 @@ from defense import EnhancedDefense
 
 # def apply_smoothing(image, sigma):
 #     return EnhancedDefense(image, size=3, sigma=sigma)
-def apply_smoothing(image, sigma):
-    """Apply enhanced defense to a single image"""
+def apply_defense(image, method='feature_squeeze', bit_depth=4):
+    """Apply defense to a single image using feature squeezing"""
     defense = EnhancedDefense()
-    return defense.defend(image, method='ensemble', sigma=sigma)
+    return defense.defend(image, method=method, bit_depth=bit_depth)
 
 # --- State ---
 current = {
@@ -711,9 +711,11 @@ def run_defense():
     if current["adversarial"] is None:
         status_lbl.config(text="⚠  Run attack first.", fg=ACCENT_YLW)
         return
-    status_lbl.config(text="🛡  Applying Gaussian defense...", fg=ACCENT_GRN)
+    status_lbl.config(text="🛡  Applying feature squeeze defense...", fg=ACCENT_GRN)
     window.update()
-    defended = apply_smoothing(current["adversarial"], sigma_var.get())
+    # Use feature squeezing instead of Gaussian blur
+    # Lower bit_depth = stronger defense (2-4 bits works well)
+    defended = apply_defense(current["adversarial"], method='feature_squeeze', bit_depth=3)
     current["defended"] = defended
     update_card(def_img, def_dt_bars, def_nn_bars,
                 def_pred_lbl, current["label"], defended)
