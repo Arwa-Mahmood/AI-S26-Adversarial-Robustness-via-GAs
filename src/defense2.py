@@ -1,7 +1,6 @@
 # enhanced_defense.py
 import numpy as np
 from scipy.ndimage import median_filter, gaussian_filter
-#from sklearn.ensemble import VotingClassifier
 
 class EnhancedDefense:
     def __init__(self):
@@ -9,7 +8,7 @@ class EnhancedDefense:
             'gaussian': self._gaussian_defense,
             'median': self._median_defense,
             'ensemble': self._ensemble_defense,
-            #'adaptive': self._adaptive_defense
+            'adaptive': self._adaptive_defense,
         }
     
     def _gaussian_defense(self, image, sigma=1.0):
@@ -23,35 +22,39 @@ class EnhancedDefense:
         return np.clip(result, 0, 1).flatten()
     
     def _ensemble_defense(self, image, sigma=1.0):
-        """Voting ensemble of multiple methods"""
+        """Median filter first (removes adversarial outliers, preserves edges),
+        then a gentle Gaussian to smooth any remaining noise."""
         img_2d = image.reshape(28, 28)
         
-        # Multiple defenses
-        gaussian = gaussian_filter(img_2d, sigma=sigma)
-        median = median_filter(img_2d, size=3) 
+        # Step 1: Median filter — removes salt-and-pepper adversarial perturbations
+        #         while preserving digit edges (key advantage over pure Gaussian)
+        result = median_filter(img_2d, size=3)
         
-        # Weighted average (give more weight to median for outlier removal)
-        #result = (gaussian * 0.4 + median * 0.6)
-        result = (gaussian * 0.7 + median * 0.3)
-        #return result.flatten()
+        # Step 2: Very gentle Gaussian on top — just enough to smooth remaining noise
+        #         without blurring the digit into oblivion
+        effective_sigma = min(sigma * 0.35, 0.6)
+        result = gaussian_filter(result, sigma=effective_sigma)
+        
         return np.clip(result, 0, 1).flatten()
 
-    # def _adaptive_defense(self, image, base_sigma=1.0):
-    #     """Adapt sigma based on local noise"""
-    #     img_2d = image.reshape(28, 28)
+    def _adaptive_defense(self, image, sigma=1.0):
+        """Adapt defense strength based on estimated perturbation level"""
+        img_2d = image.reshape(28, 28)
         
-    #     # Estimate noise per region
-    #     smooth = gaussian_filter(img_2d, sigma=0.5)
-    #     noise = np.abs(img_2d - smooth)
+        # Estimate local noise by comparing with a lightly smoothed version
+        light_smooth = gaussian_filter(img_2d, sigma=0.3)
+        noise_map = np.abs(img_2d - light_smooth)
+        noise_level = noise_map.mean()
         
-    #     # Higher sigma in noisy regions
-    #     adaptive_sigma = base_sigma + (noise * 2)
-    #     adaptive_sigma = np.clip(adaptive_sigma, 0.5, 3.0)
+        # Always start with median (edge-preserving denoising)
+        result = median_filter(img_2d, size=3)
         
-    #     # Apply adaptive smoothing
-    #     from scipy.ndimage import gaussian_filter
-    #     result = gaussian_filter(img_2d, sigma=adaptive_sigma)
-    #     return result.flatten()
+        # Add Gaussian only if noise is significant
+        if noise_level > 0.03:
+            g_sigma = min(sigma * 0.3, 0.5)
+            result = gaussian_filter(result, sigma=g_sigma)
+        
+        return np.clip(result, 0, 1).flatten()
     
     def defend(self, X, method='ensemble', **kwargs):
         """Main defense interface"""

@@ -493,21 +493,30 @@ def predict_proba_fn(adv_batch):
     # return nn_model.predict(image.reshape(1, -1), verbose=0)
     return nn_model.predict(adv_batch, verbose=0)
 
+# def attack(predict_fn, image, label, epsilon):
+#     ga = GeneticAttack(epsilon=epsilon, pop_size=100, n_generations=200)
+#     # Use DT predict_proba for fitness, and DT predict_fn for label check
+
+#     adv, success, gen = ga.attack(
+#         image, label, 
+#         lambda x: dt_model.predict(x),      #predict_fn (batch, return labels) 
+#         lambda x: dt_model.predict_proba(x) #predict_proba_fn (batch, return probs )
+#         )
+#     print(f"Attack - Success: {success}, Generation: {gen}")
+#     return adv
 def attack(predict_fn, image, label, epsilon):
     ga = GeneticAttack(epsilon=epsilon, pop_size=100, n_generations=200)
-    # Use DT predict_proba for fitness, and DT predict_fn for label check
-
     adv, success, gen = ga.attack(
-        image, label, 
-        lambda x: dt_model.predict(x),      #predict_fn (batch, return labels) 
-        lambda x: dt_model.predict_proba(x) #predict_proba_fn (batch, return probs )
-        )
+        image, label,
+        lambda x: np.argmax(nn_model.predict(x, verbose=0), axis=1),
+        lambda x: nn_model.predict(x, verbose=0)
+    )
     print(f"Attack - Success: {success}, Generation: {gen}")
     return adv
 
 # def apply_smoothing(image, sigma):
 #     return image
-from defense import EnhancedDefense
+from defense2 import EnhancedDefense
 
 # def apply_smoothing(image, sigma):
 #     return EnhancedDefense(image, size=3, sigma=sigma)
@@ -656,7 +665,7 @@ def make_confidence_bars(frame, probs):
                  fg=TEXT_DIM, font=("Courier",7)).pack(side=tk.LEFT)
 
 def update_card(img_label, dt_bar_frame, nn_bar_frame,
-                pred_label, true_label_val, image):
+                dt_pred_label, nn_pred_label, true_label_val, image):
     show_image(img_label, image)
     dt_probs = dt_predict(image)
     nn_probs = nn_predict(image)
@@ -664,20 +673,18 @@ def update_card(img_label, dt_bar_frame, nn_bar_frame,
     nn_pred  = np.argmax(nn_probs)
     make_confidence_bars(dt_bar_frame, dt_probs)
     make_confidence_bars(nn_bar_frame, nn_probs)
-    dt_col = ACCENT_GRN if dt_pred == true_label_val else ACCENT_RED
-    nn_col = ACCENT_GRN if nn_pred == true_label_val else ACCENT_RED
-    # pred_label.config(
-    #     text=f"DT → {dt_pred}   NN → {nn_pred}",
-    #     fg=ACCENT_GRN if dt_pred == true_label_val and nn_pred == true_label_val else ACCENT_RED
-    # )
     dt_conf = int(dt_probs[dt_pred] * 100)
     nn_conf = int(nn_probs[nn_pred] * 100)
     dt_col = ACCENT_GRN if dt_pred == true_label_val else ACCENT_RED
     nn_col = ACCENT_GRN if nn_pred == true_label_val else ACCENT_RED
-    pred_label.config(
-    text=f"DT predicts: {dt_pred}  ({dt_conf}%)\nNN predicts: {nn_pred}  ({nn_conf}%)",
-    fg=dt_col
-)
+    dt_pred_label.config(
+        text=f"DT predicts: {dt_pred}  ({dt_conf}%)",
+        fg=dt_col
+    )
+    nn_pred_label.config(
+        text=f"NN predicts: {nn_pred}  ({nn_conf}%)",
+        fg=nn_col
+    )
 
 # ─────────────────────────────────────────
 # BUTTON ACTIONS
@@ -691,13 +698,13 @@ def load_image():
     current["defended"]    = None
 
     update_card(orig_img, orig_dt_bars, orig_nn_bars,
-                orig_pred_lbl, current["label"], current["image"])
+                orig_dt_pred_lbl, orig_nn_pred_lbl, current["label"], current["image"])
 
     for w in [atk_img, def_img]:
         w.configure(image='')
     for f in [atk_dt_bars, atk_nn_bars, def_dt_bars, def_nn_bars]:
         for c in f.winfo_children(): c.destroy()
-    for l in [atk_pred_lbl, def_pred_lbl]:
+    for l in [atk_dt_pred_lbl, atk_nn_pred_lbl, def_dt_pred_lbl, def_nn_pred_lbl]:
         l.config(text="—", fg=TEXT_SEC)
 
     true_lbl.config(text=f"TRUE LABEL:  {current['label']}")
@@ -713,7 +720,7 @@ def run_attack():
     adv = attack(dt_predict, current["image"], current["label"], epsilon_var.get())
     current["adversarial"] = adv
     update_card(atk_img, atk_dt_bars, atk_nn_bars,
-                atk_pred_lbl, current["label"], adv)
+                atk_dt_pred_lbl, atk_nn_pred_lbl, current["label"], adv)
     status_lbl.config(text="✗  Attack complete. Red = fooled.", fg=ACCENT_RED)
     animate_network(adv)
 
@@ -726,7 +733,7 @@ def run_defense():
     defended = apply_smoothing(current["adversarial"], sigma_var.get())
     current["defended"] = defended
     update_card(def_img, def_dt_bars, def_nn_bars,
-                def_pred_lbl, current["label"], defended)
+                def_dt_pred_lbl, def_nn_pred_lbl, current["label"], defended)
     status_lbl.config(text="✔  Defense applied. Green = recovered.", fg=ACCENT_GRN)
     animate_network(defended)
 
@@ -736,7 +743,7 @@ def reset_all():
         w.configure(image='')
     for f in [orig_dt_bars,orig_nn_bars,atk_dt_bars,atk_nn_bars,def_dt_bars,def_nn_bars]:
         for c in f.winfo_children(): c.destroy()
-    for l in [orig_pred_lbl, atk_pred_lbl, def_pred_lbl]:
+    for l in [orig_dt_pred_lbl, orig_nn_pred_lbl, atk_dt_pred_lbl, atk_nn_pred_lbl, def_dt_pred_lbl, def_nn_pred_lbl]:
         l.config(text="—", fg=TEXT_SEC)
     true_lbl.config(text="TRUE LABEL:  —")
     draw_network(nn_canvas)
@@ -811,7 +818,7 @@ tk.Scale(sidebar, from_=0.1, to=0.5, resolution=0.05,
          font=("Courier",7)).pack(padx=12)
 
 section_label(sidebar, "SIGMA  (defense strength)")
-sigma_var = tk.DoubleVar(value=2.0)
+sigma_var = tk.DoubleVar(value=1.0)
 tk.Scale(sidebar, from_=0.5, to=3.0, resolution=0.5,
          orient=tk.HORIZONTAL, variable=sigma_var,
          bg=PANEL_BG, fg=TEXT_PRI, troughcolor=BORDER,
@@ -872,10 +879,13 @@ def make_card(parent, title, accent):
     img_lbl = tk.Label(card, bg="#0a0c10", width=140, height=140)
     img_lbl.pack(pady=4, padx=10)
 
-    # prediction line
-    pred_lbl = tk.Label(card, text="—", bg=CARD_BG, fg=TEXT_SEC,
-                        font=("Courier",11,"bold"))
-    pred_lbl.pack(pady=2)
+    # prediction lines — separate labels so DT and NN can have independent colors
+    dt_pred_lbl = tk.Label(card, text="—", bg=CARD_BG, fg=TEXT_SEC,
+                           font=("Courier",11,"bold"))
+    dt_pred_lbl.pack(pady=(2,0))
+    nn_pred_lbl = tk.Label(card, text="—", bg=CARD_BG, fg=TEXT_SEC,
+                           font=("Courier",11,"bold"))
+    nn_pred_lbl.pack(pady=(0,2))
 
     # confidence bars
     tk.Label(card, text="DT CONFIDENCE", bg=CARD_BG, fg=TEXT_DIM,
@@ -888,11 +898,11 @@ def make_card(parent, title, accent):
     nn_bars = tk.Frame(card, bg=CARD_BG)
     nn_bars.pack(fill=tk.X, padx=10, pady=(0,8))
 
-    return img_lbl, pred_lbl, dt_bars, nn_bars
+    return img_lbl, dt_pred_lbl, nn_pred_lbl, dt_bars, nn_bars
 
-orig_img, orig_pred_lbl, orig_dt_bars, orig_nn_bars = make_card(content, "ORIGINAL", ACCENT_BLUE)
-atk_img,  atk_pred_lbl,  atk_dt_bars,  atk_nn_bars  = make_card(content, "AFTER ATTACK", ACCENT_RED)
-def_img,  def_pred_lbl,  def_dt_bars,  def_nn_bars  = make_card(content, "AFTER DEFENSE", ACCENT_GRN)
+orig_img, orig_dt_pred_lbl, orig_nn_pred_lbl, orig_dt_bars, orig_nn_bars = make_card(content, "ORIGINAL", ACCENT_BLUE)
+atk_img,  atk_dt_pred_lbl,  atk_nn_pred_lbl,  atk_dt_bars,  atk_nn_bars  = make_card(content, "AFTER ATTACK", ACCENT_RED)
+def_img,  def_dt_pred_lbl,  def_nn_pred_lbl,  def_dt_bars,  def_nn_bars  = make_card(content, "AFTER DEFENSE", ACCENT_GRN)
 
 # ─────────────────────────────────────────
 # STATUS BAR

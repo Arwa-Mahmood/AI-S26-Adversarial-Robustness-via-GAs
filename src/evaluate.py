@@ -98,7 +98,7 @@ def nn_predict_proba(X):
     return nn_model.predict(X, verbose=0)
 
 # Defense
-from defense import EnhancedDefense
+from defense2 import EnhancedDefense
 
 # Genetic Attack
 from genetic_attack import GeneticAttack
@@ -137,28 +137,13 @@ def run_ga_attack(X, y, predict_fn, predict_proba_fn, label=""):
 
     return adv_examples, success_flags
 
-# def defense_sweep(X_adv, y, predict_fn, sigmas, label=""):
-#     """Evaluate Gaussian smoothing at each sigma on X_adv."""
-#     rows = []
-#     for sigma in sigmas:
-#         X_smooth = defend(X_adv, size=3, sigma=sigma)
-#         preds    = predict_fn(X_smooth)
-#         acc      = accuracy(preds, y)
-#         rows.append((sigma, acc))
-#         print(f"  [{label}] sigma={sigma:.1f} → acc after defense: {acc:.2f}%")
-#     return rows
-
-# In evaluate.py, replace the defense_sweep function:
-
-from defense import EnhancedDefense
-
 def defense_sweep(X_adv, y, predict_fn, sigmas, label=""):
     """Evaluate enhanced defense at each sigma"""
     defense = EnhancedDefense()
     rows = []
     
     for sigma in sigmas:
-        # Use ensemble defense
+        # Use ensemble defense (same as gui_temp2.py)
         X_smooth = defense.defend(X_adv, method='ensemble', sigma=sigma)
         preds = predict_fn(X_smooth)
         acc = accuracy(preds, y)
@@ -313,7 +298,7 @@ lines.append("\n" + "=" * 65)
 summary = "\n".join(lines)
 print("\n" + summary)
 
-with open("results/summary.txt", "w") as f:
+with open("results/summary.txt", "w", encoding="utf-8") as f:
     f.write(summary)
 
 print("\n[eval] Done. Summary saved to results/summary.txt")

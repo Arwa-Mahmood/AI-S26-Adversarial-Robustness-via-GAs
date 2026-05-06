@@ -19,10 +19,9 @@ class GeneticAttack:
         #astype fro converting datatypes -- faster + consistent 
         #ONE ROW -> ONE CANDIDATE 
     
-    #------------------------------------------------------------------------------------------------------
-    #FITNESS -- HOW MUCH DID WE CONFUSE THE MODEL. high = lower confidence = GOOD attack and vice versa
-    #------------------------------------------------------------------------------------------------------
 
+
+    #FITNESS -- HOW MUCH DID WE CONFUSE THE MODEL. high = lower confidence = GOOD attack and vice versa
     def _fitness (self, population, x, true_label, predict_proba_fn):
         #apply each perturbation to x, clip to pixel range 
         adv_batch = np.clip(x + population, 0, 1)       #pop_size, 784 -- applying noise, keep pixels valid 
@@ -37,10 +36,8 @@ class GeneticAttack:
         return fitness
         # Now encourages BOTH: low confidence on true label AND high confidence on wrong label
 
-    #------------------------------------------------------------------------------------------------------
-    #TOURNAMENT --SELECTION
-    #------------------------------------------------------------------------------------------------------
 
+    #TOURNAMENT --SELECTION
     def _selection (self, population, fitness, k = 3): 
         # Tourname Selection (K = )
         selected = []
@@ -51,10 +48,9 @@ class GeneticAttack:
             selected.append(population[winner].copy()) 
         return np.array(selected)
     
-    #------------------------------------------------------------------------------------------------------
+    
     #UNIFORM --CROSSOVER
     # each of 784 genes independently inherited 
-    #------------------------------------------------------------------------------------------------------
     def _crossover(self, parent1, parent2):
         # each gene inherited from either parent1 or parent2 w 50% probability 
         #Random bool mask 
@@ -64,9 +60,8 @@ class GeneticAttack:
         child2 = np.where(mask, parent2, parent1)       #complement -- children are mirrors 
         return child1, child2 
     
-    #------------------------------------------------------------------------------------------------------
+    
     #MUTATION -gaussian noise or random subset of genes 
-    #------------------------------------------------------------------------------------------------------
 
     def _mutate(self, individual):
         mutated = individual.copy()
@@ -81,9 +76,9 @@ class GeneticAttack:
         return np.clip(mutated, -self.epsilon, self.epsilon)
     
 
-    #------------------------------------------------------------------------------------------------------    
+        
     #SINGLE SAMPLE ATTACK 
-    #------------------------------------------------------------------------------------------------------
+    
     def attack (self, x, true_label, predict_fn, predict_proba_fn):
         """
         Attacks a single sample x.
@@ -155,13 +150,10 @@ class GeneticAttack:
                 return candidate, True, -2
             
         return adv, False, -1
-
         #Early Exit + Evolve 
 
-    #------------------------------------------------------------------------------------------------------ 
+     
     # DATASET ATTACK    
-    #------------------------------------------------------------------------------------------------------    
-
     def attack_dataset(self, X, y, predict_fn, predict_proba_fn, 
                        n_samples=200, save_path = None, verbose = True):
         """
@@ -199,9 +191,10 @@ class GeneticAttack:
 
         return adv_examples, y[:n_samples], success_flags, gen_found
 
-#------------------------------------------------------------------------------------------------------    
+
+
+
 # EPSILON SWEEP UTILITY -- standalone function, not a method 
-#------------------------------------------------------------------------------------------------------        
 def epsilon_sweep (X, y, predict_fn, predict_proba_fn, 
                 epsilons = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5],
                 n_samples = 200, save_dir = 'results/'):
