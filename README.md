@@ -1,2 +1,3 @@
 # AI-S26-Adversarial Robustness via GAs
-Adversarial Robustness of Machine Learning Classifiers: Attacking and Defending Using Genetic Algorithms
+A study of how Genetic Algorithm based adversarial attacks can fool machine learning classifiers, and how well a Gaussian defense can recover them.
+We trained two classifiers from scratch on handwritten digits, attacked them using a black-box Genetic Algorithm that evolves imperceptible noise, and tested a Gaussian smoothing defense to see which model could recover and why.
