@@ -1,17 +1,8 @@
 """
-evaluate.py
------------
-Full evaluation pipeline for the adversarial robustness project.
-
-Covers:
   1. Baseline accuracy  (DT + NN on clean test set)
   2. GA attack          (DT + NN, configurable epsilon / n_samples)
   3. Gaussian defense   (multiple sigma values)
   4. Summary table printed to stdout + saved as results/summary.txt
-
-Usage:
-    python evaluate.py
-    python evaluate.py --eps 0.2 --n 100 --sigmas 0.5 1.0 1.5 2.0
 """
 
 import os, argparse
@@ -19,9 +10,8 @@ import numpy as np
 import pickle
 import sys
 
-# Add Node class definition BEFORE loading pickle
+
 class Node:
-    """Node class for Decision Tree - required for unpickling"""
     def __init__(self, feature=None, threshold=None, left=None, right=None, value=None):
         self.feature = feature
         self.threshold = threshold
@@ -29,33 +19,30 @@ class Node:
         self.right = right
         self.value = value
 
-# Now import DecisionTree (which should also have Node defined)
 from decision_tree import DecisionTree
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 os.makedirs("results", exist_ok=True)
 
-# ─────────────────────────────────────────
+
 # CLI ARGS
-# ─────────────────────────────────────────
 parser = argparse.ArgumentParser()
-parser.add_argument("--eps",    type=float, default=0.3,  # Increased default
+parser.add_argument("--eps",    type=float, default=0.3,  
                     help="GA epsilon (perturbation budget)")
 parser.add_argument("--n",      type=int,   default=100,
                     help="Number of test samples to attack")
-parser.add_argument("--pop",    type=int,   default=100,  # Increased default
+parser.add_argument("--pop",    type=int,   default=100,  
                     help="GA population size")
-parser.add_argument("--gens",   type=int,   default=150,  # Increased default
+parser.add_argument("--gens",   type=int,   default=150,  
                     help="GA generations")
 parser.add_argument("--sigmas", type=float, nargs="+",
-                    default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  # Added more sigmas
+                    default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  
                     help="Sigma values for Gaussian defense sweep")
 args = parser.parse_args()
 
 
-# ─────────────────────────────────────────
-# LOAD DATA
-# ─────────────────────────────────────────
+
+# Loading Data 
 print("[eval] Loading data...")
 X_test  = np.load("x_test_final_data.npy")
 y_test  = np.load("y_test_final_data.npy")
@@ -64,13 +51,9 @@ N = min(args.n, len(X_test))
 X_eval = X_test[:N]
 y_eval = y_test[:N]
 
-
-# ─────────────────────────────────────────
-# LOAD MODELS
-# ─────────────────────────────────────────
+# Loading models 
 print("[eval] Loading models...")
 
-# Decision Tree - add Node class to globals for pickle
 import decision_tree
 sys.modules['__main__'].Node = Node  # This helps pickle find Node class
 
@@ -104,18 +87,16 @@ from defense2 import EnhancedDefense
 from genetic_attack import GeneticAttack
 
 
-# ─────────────────────────────────────────
-# HELPERS
-# ─────────────────────────────────────────
+# Helper Functions 
 
 def accuracy(preds, labels):
     return float(np.mean(preds == labels)) * 100
 
 def run_ga_attack(X, y, predict_fn, predict_proba_fn, label=""):
-    """
-    Runs GA attack on X[i] for i in range(len(X)).
-    Returns adversarial examples array and success flags.
-    """
+    
+    #Runs GA attack on X[i] for i in range(len(X)).
+    #Returns adversarial examples array and success flags.
+    
     ga = GeneticAttack(
         epsilon=args.eps,
         pop_size=args.pop,
@@ -124,6 +105,7 @@ def run_ga_attack(X, y, predict_fn, predict_proba_fn, label=""):
         crossover_rate=0.8,
         early_stop=True,
     )
+
     adv_examples  = np.zeros_like(X)
     success_flags = np.zeros(len(X), dtype=bool)
 
@@ -131,6 +113,7 @@ def run_ga_attack(X, y, predict_fn, predict_proba_fn, label=""):
         adv, success, gen = ga.attack(X[i], y[i], predict_fn, predict_proba_fn)
         adv_examples[i]  = adv
         success_flags[i] = success
+
         if (i + 1) % 20 == 0 or i == len(X) - 1:
             asr = success_flags[: i + 1].mean() * 100
             print(f"  [{label}] [{i+1}/{len(X)}] ASR so far: {asr:.1f}%")
@@ -138,12 +121,11 @@ def run_ga_attack(X, y, predict_fn, predict_proba_fn, label=""):
     return adv_examples, success_flags
 
 def defense_sweep(X_adv, y, predict_fn, sigmas, label=""):
-    """Evaluate enhanced defense at each sigma"""
+
     defense = EnhancedDefense()
     rows = []
     
     for sigma in sigmas:
-        # Use ensemble defense (same as gui_temp2.py)
         X_smooth = defense.defend(X_adv, method='ensemble', sigma=sigma)
         preds = predict_fn(X_smooth)
         acc = accuracy(preds, y)
@@ -153,9 +135,7 @@ def defense_sweep(X_adv, y, predict_fn, sigmas, label=""):
     return rows
 
 
-# ─────────────────────────────────────────
 # 1. BASELINE ACCURACY
-# ─────────────────────────────────────────
 print("\n" + "="*55)
 print("  STEP 1 — Baseline accuracy (clean test set)")
 print("="*55)
@@ -169,9 +149,7 @@ print(f"  DT clean accuracy : {dt_clean_acc:.2f}%")
 print(f"  NN clean accuracy : {nn_clean_acc:.2f}%")
 
 
-# ─────────────────────────────────────────
 # 2. GA ATTACK ON DECISION TREE
-# ─────────────────────────────────────────
 print("\n" + "="*55)
 print(f"  STEP 2a — GA attack on DT  (ε={args.eps}, {N} samples)")
 print("="*55)
@@ -183,7 +161,6 @@ adv_dt, flags_dt = run_ga_attack(
     label="DT"
 )
 
-# How does the NN hold up against DT-optimized adversarials?
 dt_adv_preds_dt = dt_predict(adv_dt)
 dt_adv_preds_nn = nn_predict(adv_dt)
 
@@ -199,9 +176,7 @@ np.savez("results/adv_dt.npz",
          adv=adv_dt, labels=y_eval, success=flags_dt)
 
 
-# ─────────────────────────────────────────
 # 3. GA ATTACK ON NEURAL NETWORK
-# ─────────────────────────────────────────
 print("\n" + "="*55)
 print(f"  STEP 2b — GA attack on NN  (ε={args.eps}, {N} samples)")
 print("="*55)
@@ -228,9 +203,7 @@ np.savez("results/adv_nn.npz",
          adv=adv_nn, labels=y_eval, success=flags_nn)
 
 
-# ─────────────────────────────────────────
 # 4. GAUSSIAN DEFENSE ON DT ADVERSARIALS
-# ─────────────────────────────────────────
 print("\n" + "="*55)
 print("  STEP 3a — Gaussian defense on DT adversarials")
 print("="*55)
@@ -239,9 +212,7 @@ defense_dt_on_dt = defense_sweep(adv_dt, y_eval, dt_predict, args.sigmas, "DT→
 defense_dt_on_nn = defense_sweep(adv_dt, y_eval, nn_predict, args.sigmas, "DT→NN")
 
 
-# ─────────────────────────────────────────
 # 5. GAUSSIAN DEFENSE ON NN ADVERSARIALS
-# ─────────────────────────────────────────
 print("\n" + "="*55)
 print("  STEP 3b — Gaussian defense on NN adversarials")
 print("="*55)
@@ -250,9 +221,7 @@ defense_nn_on_nn = defense_sweep(adv_nn, y_eval, nn_predict, args.sigmas, "NN→
 defense_nn_on_dt = defense_sweep(adv_nn, y_eval, dt_predict, args.sigmas, "NN→DT")
 
 
-# ─────────────────────────────────────────
 # 6. SUMMARY TABLE
-# ─────────────────────────────────────────
 lines = []
 lines.append("=" * 65)
 lines.append("  ADVERSARIAL ROBUSTNESS — EVALUATION SUMMARY")

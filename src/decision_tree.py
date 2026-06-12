@@ -1,32 +1,14 @@
 #DECISION TREE FROM SCRATCH 
 
 import numpy as np
-import pickle   #SAVE AND LOAD TRAINED MODEL TO/FROM DISK
+import pickle  
 
-
-#DECISION TREE FROM SCRATCH 
-
-# def entropy(y): # y = array of class labels (digits 0 - 9)
-#     if len(y) == 0: 
-#         return 0.0 #entropy 0 -- no certainty 
-    
-#     # counting how many times each class appears 
-#     counts = np.bincount(y, minlength = 10)
-
-#     #counts to probabilities 
-#     probs = counts / len(y)
-
-#     #remove 0 probabilities  -- avoids log 0
-#     probs = probs [probs > 0]
-
-#     return -np.sum(probs * np.log2(probs))
-#     # -sum(p * log2(p)) for each class -- entropy formula 
 
 def gini(y):
     if len(y) == 0:
         return 0.0 
     
-     # counting how many times each class appears 
+    # counting how many times each class appears 
     counts = np.bincount(y, minlength = 10)
 
     #counts to probabilities 
@@ -39,37 +21,38 @@ def gini(y):
 
 
 def information_gain(y, y_left, y_right):
-    #measures how good a split is 
+    #measuring split 
     if len(y_left) == 0 or len(y_right) == 0:
         return 0.0 
     
-    #invalid split -- no gain 
+    #invalid split, no gain 
     n = len(y)
     weighted = (len(y_left) / n) * gini (y_left) + (len(y_right) / n ) * gini(y_right) 
 
-    #weighted avg after split  -- before -after
+    #weighted avg after split before -after
     return gini (y) - weighted 
     
 
 class Node:
 
     def __init__(self, feature=None, threshold=None, left=None, right=None, value=None, proba=None):
-        self.feature = feature          # feature -- index of feature used for split 
+        self.feature = feature         
         self.threshold = threshold      
-        self.left = left                #left, right child nodes
+        self.left = left                
         self.right = right
-        self.value = value  # Majority class -- predicted class for leaf nodes
-        self.proba = proba if proba is not None else [] # Class distribution for GA fitness -- probability distribution at leaf 
+        self.value = value  
+        self.proba = proba if proba is not None else [] 
+        # Class distribution for GA fitness, probability distribution at leaf 
 
 
 class DecisionTree:
-    # MAX DEPTH , minimum samples required to split, N_FEATURES : no. of features to consider per split (random selection)
+
     def __init__(self, max_depth=20, min_samples_split=10, min_samples_leaf =5,  n_features=None):
         self.max_depth = max_depth
-        self.min_samples_split = min_samples_split #if a node has 2 images left then don't split further
+        self.min_samples_split = min_samples_split 
         self.n_features = n_features 
         self.root = None                        
-        self.min_samples_leaf = min_samples_leaf       #---producing a splitting with enough children samples 
+        self.min_samples_leaf = min_samples_leaf 
 
 
     # TRAINING 
@@ -93,7 +76,7 @@ class DecisionTree:
         # Randomly picking a group of pixels to test
         feat_idxs = np.random.choice(n_feats,self.n_features, replace = False)
 
-        #Which of these pixels, at what brightness level, splits the data most cleanly?
+        #Which of these pixels splits the data most cleanly?
         best_feat, best_thr = self._best_split(X,y, feat_idxs)
 
         if best_feat is None: 
@@ -109,7 +92,6 @@ class DecisionTree:
         return Node(feature=best_feat, threshold=best_thr, left=left, right=right)
     
     def _best_split(self, X, y, feat_idxs):
-    # iterate all features + candidate thresholds, return best (feature, threshold)
         best_gain = -1          #intializing lwoest gain
         best_feat = None        
         best_thr = None 
@@ -119,7 +101,7 @@ class DecisionTree:
             # extract feature column
             col = X[:, feat]
 
-            #CANDIDATE THRESHOLDS -- percentiles instead of all values 
+            #candidate thresholds 
             thresholds = np.unique (np.percentile(col, [10,25,50,75,90]))
 
             # try each threshold 
@@ -128,7 +110,7 @@ class DecisionTree:
                 y_right = y[col > thr]
 
                 if len(y_left) < self.min_samples_leaf or len(y_right) < self.min_samples_leaf:
-                    continue                          # skip bad threshold, not the whole node
+                    continue                        
 
                 #compute gain
                 gain = information_gain(y, y_left, y_right)
@@ -172,24 +154,6 @@ class DecisionTree:
             self.__dict__.update(data.__dict__)
 
 
-#TREE -- testing
-
-# if __name__ == "__main__":
-#     import os
-#     os.makedirs("models", exist_ok=True)
-
-#     from mnist import load_mnist
-#     X_train, y_train, X_test, y_test = load_mnist()
-
-#     dt = DecisionTree(max_depth=20, min_samples_split=10, n_features=28)
-#     dt.fit(X_train[:5000], y_train[:5000])
-
-#     preds = dt.predict(X_test[:500])
-#     print(f"Accuracy: {np.mean(preds == y_test[:500]):.4f}")
-
-#     probas = dt.predict_proba(X_test[:5])
-#     print(f"Proba shape: {probas.shape}")       # (5, 10)
-#     print(f"Proba sums:  {probas.sum(axis=1)}") # all 1.0
 if __name__ == "__main__":
     import os
     os.makedirs("models", exist_ok=True)
@@ -204,9 +168,6 @@ if __name__ == "__main__":
 
     preds = dt.predict(X_test)
     print(f"DT Accuracy: {np.mean(preds == y_test):.4f}")
-
-    # dt.save('models/decision_tree.pkl')
-    # print("Decision tree saved.")
 
     dt.save('models/decision_tree.pkl')
     print("Decision tree saved.")
