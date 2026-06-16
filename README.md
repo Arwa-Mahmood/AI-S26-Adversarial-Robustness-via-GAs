@@ -17,17 +17,22 @@ Then run the GUI file: load a digit, run the attack, apply the defense, and watc
 | `evaluate.py` | CLI pipeline covering all evaluation steps |
 | `gui_temp.py` | Tkinter GUI with live confidence bars and animated NN diagram |
 
-## How to run
+## How to Run
 
-**1. Install dependencies**
-\```
+Install dependencies:
+```bash
 pip install numpy tensorflow scikit-learn scipy pillow
-\```
+```
 
-**2. Launch the demo**
-\```
-python gui.py
-\```
+Then launch the demo:
+```bash
+python gui_temp.py
+```
 
-that's it. setup.py runs automatically on launch and handles data extraction and model training before the GUI opens.
+setup.py runs automatically on launch and handles data extraction and model training before the GUI opens.
+
+To run the evaluation pipeline separately:
+```bash
+python evaluate.py
+```
 *Ayesha · Arwa · Eshaal*
