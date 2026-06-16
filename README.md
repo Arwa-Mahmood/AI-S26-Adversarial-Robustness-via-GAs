@@ -15,6 +15,19 @@ Then run the GUI file: load a digit, run the attack, apply the defense, and watc
 | `genetic_attack.py` | The GA attack engine |
 | `defense2.py` | Four defense strategies |
 | `evaluate.py` | CLI pipeline covering all evaluation steps |
-| `gui_temp2.py` | Tkinter GUI with live confidence bars and animated NN diagram |
+| `gui_temp.py` | Tkinter GUI with live confidence bars and animated NN diagram |
 
+## How to run
+
+**1. Install dependencies**
+\```
+pip install numpy tensorflow scikit-learn scipy pillow
+\```
+
+**2. Launch the demo**
+\```
+python gui.py
+\```
+
+that's it. setup.py runs automatically on launch and handles data extraction and model training before the GUI opens.
 *Ayesha · Arwa · Eshaal*
